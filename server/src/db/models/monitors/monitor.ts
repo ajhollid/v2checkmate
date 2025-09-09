@@ -40,7 +40,7 @@ const MonitorSchema = new Schema<IMonitor>(
       ref: "Organization",
       required: true,
     },
-    teamId: { type: Schema.Types.ObjectId, ref: "Team" },
+    teamId: { type: Schema.Types.ObjectId, ref: "Team", required: true },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },

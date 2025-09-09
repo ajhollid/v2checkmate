@@ -1,5 +1,13 @@
 import bcrypt from "bcryptjs";
-import { User, Organization, Team, Role } from "../db/models/index.js";
+import {
+  User,
+  Organization,
+  Team,
+  Role,
+  ITokenizedUser,
+  Monitor,
+  Check,
+} from "../../db/models/index.js";
 const DEFAULT_ROLES = [
   {
     name: "Admin",
@@ -17,15 +25,23 @@ const DEFAULT_ROLES = [
       "teams.manage",
       "teams.create",
       "teams.delete",
+      "monitors.*",
     ],
     level: "organization" as const,
     isSystem: true,
   },
   {
     name: "Member",
-    description: "Basic organization member",
-    permissions: ["profile.update", "teams.view", "tasks.view"],
-    level: "organization" as const,
+    description: "Basic team member",
+    permissions: [
+      "profile.update",
+      "teams.view",
+      "tasks.view",
+      "monitors.create",
+      "monitors.view",
+      "monitors.update",
+    ],
+    level: "team" as const,
     isSystem: true,
   },
 ];
@@ -44,15 +60,10 @@ export interface LoginData {
   password: string;
 }
 
-export interface AuthResult {
-  sub: string;
-  organizationId: string;
-  roles: string[];
-  teams: string[];
-}
+export type AuthResult = ITokenizedUser;
 
 class AuthService {
-  async register(signupData: RegisterData): Promise<AuthResult> {
+  async register(signupData: RegisterData): Promise<ITokenizedUser> {
     const {
       email,
       firstName,
@@ -85,7 +96,11 @@ class AuthService {
 
     // Create all default roles for the organization
     const rolePromises = DEFAULT_ROLES.map((roleData) =>
-      new Role({ ...roleData, organizationId: organization._id }).save()
+      new Role({
+        ...roleData,
+        organizationId: organization._id,
+        teamId: roleData.name === "Member" ? defaultTeam._id : undefined,
+      }).save()
     );
     const roles = await Promise.all(rolePromises);
 
@@ -111,11 +126,11 @@ class AuthService {
       sub: savedUser._id.toString(),
       organizationId: savedUser.organizationId.toString(),
       roles: savedUser.roles.map((role) => role.toString()),
-      teams: [defaultTeam._id.toString()],
+      teamId: [defaultTeam._id.toString()],
     };
   }
 
-  async login(loginData: LoginData): Promise<AuthResult> {
+  async login(loginData: LoginData): Promise<ITokenizedUser> {
     const { email, password } = loginData;
 
     // Find user by email
@@ -150,8 +165,8 @@ class AuthService {
     return {
       sub: user._id.toString(),
       organizationId: user.organizationId.toString(),
+      teamId: teams.map((team) => team._id.toString()),
       roles: user.roles.map((role) => role.toString()),
-      teams: teams.map((team) => team._id.toString()),
     };
   }
 
@@ -160,6 +175,13 @@ class AuthService {
     await Organization.deleteMany({});
     await Team.deleteMany({});
     await Role.deleteMany({});
+    await Monitor.deleteMany({});
+    await Check.deleteMany({});
+  }
+
+  async cleanMonitors() {
+    await Monitor.deleteMany({});
+    await Check.deleteMany({});
   }
 }
 

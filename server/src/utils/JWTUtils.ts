@@ -1,12 +1,12 @@
 import jwt from "jsonwebtoken";
-import { AuthResult } from "../services/authService.js";
+import { AuthResult } from "../services/business/authService.js";
 
 const encode = (data: AuthResult): string => {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     throw new Error("JWT_SECRET is not defined");
   }
-  const token = jwt.sign(data, secret, { expiresIn: "1h" });
+  const token = jwt.sign(data, secret, { expiresIn: "99d" });
   return token;
 };
 
