@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import authService from "../services/authService.js";
+import authService from "../services/business/authService.js";
 import { encode, decode } from "../utils/JWTUtils.js";
 class AuthController {
   async register(req: Request, res: Response, next: NextFunction) {
@@ -32,7 +32,7 @@ class AuthController {
 
       res.status(201).json({
         message: "User and organization created successfully",
-        token,
+        data: token,
       });
     } catch (error) {
       next(error);
@@ -46,7 +46,7 @@ class AuthController {
       if (!email || !password) {
         return res
           .status(400)
-          .json({ error: "Email and password are required" });
+          .json({ message: "Email and password are required" });
       }
       const result = await authService.login({ email, password });
       const token = encode(result);
@@ -64,6 +64,15 @@ class AuthController {
       await authService.cleanup();
       res.status(200).json({ message: "Cleanup successful" });
     } catch (error) {}
+  }
+
+  async cleanMonitors(req: Request, res: Response) {
+    try {
+      await authService.cleanMonitors();
+      res.status(200).json({ message: "Monitors cleanup successful" });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
 }
 

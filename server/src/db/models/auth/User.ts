@@ -1,6 +1,11 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
-import { IRole } from "./Role.js";
 
+export interface ITokenizedUser {
+  sub: string;
+  organizationId: string;
+  teamId: string[];
+  roles: string[];
+}
 export interface IUser extends Document {
   _id: Types.ObjectId;
   email: string;
@@ -8,7 +13,7 @@ export interface IUser extends Document {
   lastName: string;
   passwordHash: string;
   organizationId: Types.ObjectId;
-  roles: IRole[];
+  roles: Types.ObjectId[];
   profile: {
     avatar?: string;
     bio?: string;
