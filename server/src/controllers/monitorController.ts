@@ -20,21 +20,40 @@ class MonitorController {
     }
   }
 
-  async updateById(req: Request, res: Response, next: NextFunction) {
+  async get(req: Request, res: Response, next: NextFunction) {
     try {
       const tokenizedUser = req.user;
       if (!tokenizedUser) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const monitorId = req.params.monitorId;
-      if (!monitorId) {
-        throw new ApiError("Monitor ID is required", 400);
+      const resource = req.resource; // Retrieved from middleware
+      const monitor = await monitorService.get(resource);
+
+      res.status(200).json({
+        message: "Monitor retrieved successfully",
+        data: monitor,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const tokenizedUser = req.user;
+      if (!tokenizedUser) {
+        return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const monitor = await monitorService.updateById(
+      const resource = req.resource; // Retrieved from middleware
+      if (!resource) {
+        throw new ApiError("Monitor not found", 404);
+      }
+
+      const monitor = await monitorService.update(
         tokenizedUser,
-        monitorId,
+        resource,
         req.body
       );
       res.status(200).json({
@@ -46,44 +65,19 @@ class MonitorController {
     }
   }
 
-  async getById(req: Request, res: Response, next: NextFunction) {
+  async delete(req: Request, res: Response, next: NextFunction) {
     try {
       const tokenizedUser = req.user;
       if (!tokenizedUser) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const monitorId = req.params.monitorId;
-      if (!monitorId) {
-        throw new ApiError("Monitor ID is required", 400);
+      const monitor = req.resource; // Retrieved from middleware
+      await monitorService.delete(monitor);
+      if (!monitor) {
+        throw new ApiError("Monitor not found", 404);
       }
 
-      const monitor = await monitorService.getById(
-        tokenizedUser.teamId,
-        monitorId
-      );
-      res.status(200).json({
-        message: "Monitor retrieved successfully",
-        data: monitor,
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async deleteById(req: Request, res: Response, next: NextFunction) {
-    try {
-      const tokenizedUser = req.user;
-      if (!tokenizedUser) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      const monitorId = req.params.monitorId;
-      if (!monitorId) {
-        throw new ApiError("Monitor ID is required", 400);
-      }
-
-      await monitorService.deleteById(tokenizedUser.teamId, monitorId);
       res.status(200).json({
         message: "Monitor deleted successfully",
       });
