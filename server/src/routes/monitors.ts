@@ -2,34 +2,47 @@ import express from "express";
 import monitorController from "../controllers/monitorController.js";
 import { verifyToken } from "../middleware/VerifyToken.js";
 import { verifyPermission } from "../middleware/VerifyPermissions.js";
+import { Monitor } from "../db/models/index.js";
 const router = express.Router();
 
 router.post(
   "/",
   verifyToken,
-  verifyPermission(["monitors.create"], "team"),
+  verifyPermission("monitors.create", {
+    ResourceModel: Monitor,
+    requireResource: false,
+  }),
   monitorController.create
 );
 
 router.patch(
-  "/:teamId/:monitorId",
+  "/:id",
   verifyToken,
-  verifyPermission(["monitors.update"], "team"),
-  monitorController.updateById
+  verifyPermission("monitors.update", {
+    ResourceModel: Monitor,
+    requireResource: true,
+  }),
+  monitorController.update
 );
 
 router.get(
-  "/:teamId/:monitorId",
+  "/:id",
   verifyToken,
-  verifyPermission(["monitors.view"], "team"),
-  monitorController.getById
+  verifyPermission("monitors.view", {
+    ResourceModel: Monitor,
+    requireResource: true,
+  }),
+  monitorController.get
 );
 
 router.delete(
-  "/:teamId/:monitorId",
+  "/:id",
   verifyToken,
-  verifyPermission(["monitors.delete"], "team"),
-  monitorController.deleteById
+  verifyPermission("monitors.deletes", {
+    ResourceModel: Monitor,
+    requireResource: true,
+  }),
+  monitorController.delete
 );
 
 export default router;

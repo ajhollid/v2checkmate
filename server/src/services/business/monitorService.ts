@@ -10,9 +10,13 @@ class MonitorService {
     return monitor;
   }
 
-  async updateById(
+  async get(monitor: IMonitor) {
+    return monitor;
+  }
+
+  async update(
     tokenizedUser: ITokenizedUser,
-    monitorId: string,
+    monitor: IMonitor,
     updateData: Partial<IMonitor>
   ) {
     const allowedFields: (keyof IMonitor)[] = ["name", "interval", "isActive"];
@@ -24,41 +28,18 @@ class MonitorService {
       }
     }
 
-    const monitor = await Monitor.findOneAndUpdate(
-      { _id: monitorId, teamId: { $in: tokenizedUser.teamId } },
-      { ...safeUpdate, updatedAt: new Date(), updatedBy: tokenizedUser.sub },
-      { new: true }
-    );
-
-    if (!monitor) {
-      throw new Error("Monitor not found or not authorized");
-    }
-
-    return monitor;
-  }
-
-  async getById(teamIds: string[], monitorId: string) {
-    const monitor = await Monitor.findOne({
-      _id: monitorId,
-      teamId: { $in: teamIds },
+    monitor.set({
+      ...safeUpdate,
+      updatedAt: new Date(),
+      updatedBy: tokenizedUser.sub,
     });
 
-    if (!monitor) {
-      throw new Error("Monitor not found");
-    }
-
-    return monitor;
+    const updatedMonitor = await monitor.save();
+    return updatedMonitor;
   }
 
-  async deleteById(teamIds: string[], monitorId: string) {
-    const monitor = await Monitor.findOneAndDelete({
-      _id: monitorId,
-      teamId: { $in: teamIds },
-    });
-
-    if (!monitor) {
-      throw new Error("Monitor not found or already deleted");
-    }
+  async delete(monitor: IMonitor) {
+    await monitor.deleteOne();
   }
 }
 
