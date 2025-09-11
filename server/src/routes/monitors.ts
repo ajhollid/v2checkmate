@@ -1,7 +1,7 @@
 import { Router } from "express";
 import MonitorController from "../controllers/MonitorController.js";
 import { verifyToken } from "../middleware/VerifyToken.js";
-import { verifyPermission } from "../middleware/NewVerifyPermissions.js";
+import { verifyPermission } from "../middleware/VerifyPermissions.js";
 import { Monitor } from "../db/models/index.js";
 
 class MonitorRoutes {
