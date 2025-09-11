@@ -1,48 +1,63 @@
-import express from "express";
-import monitorController from "../controllers/monitorController.js";
+import { Router } from "express";
+import MonitorController from "../controllers/MonitorController.js";
 import { verifyToken } from "../middleware/VerifyToken.js";
 import { verifyPermission } from "../middleware/VerifyPermissions.js";
 import { Monitor } from "../db/models/index.js";
-const router = express.Router();
 
-router.post(
-  "/",
-  verifyToken,
-  verifyPermission("monitors.create", {
-    ResourceModel: Monitor,
-    requireResource: false,
-  }),
-  monitorController.create
-);
+class MonitorRoutes {
+  private router;
+  private controller;
+  constructor(monitorController: MonitorController) {
+    this.router = Router();
+    this.controller = monitorController;
+    this.initRoutes();
+  }
 
-router.patch(
-  "/:id",
-  verifyToken,
-  verifyPermission("monitors.update", {
-    ResourceModel: Monitor,
-    requireResource: true,
-  }),
-  monitorController.update
-);
+  initRoutes = () => {
+    this.router.post(
+      "/",
+      verifyToken,
+      verifyPermission("monitors.create", {
+        ResourceModel: Monitor,
+        requireResource: false,
+      }),
+      this.controller.create
+    );
 
-router.get(
-  "/:id",
-  verifyToken,
-  verifyPermission("monitors.view", {
-    ResourceModel: Monitor,
-    requireResource: true,
-  }),
-  monitorController.get
-);
+    this.router.patch(
+      "/:id",
+      verifyToken,
+      verifyPermission("monitors.update", {
+        ResourceModel: Monitor,
+        requireResource: true,
+      }),
+      this.controller.update
+    );
 
-router.delete(
-  "/:id",
-  verifyToken,
-  verifyPermission("monitors.deletes", {
-    ResourceModel: Monitor,
-    requireResource: true,
-  }),
-  monitorController.delete
-);
+    this.router.get(
+      "/:id",
+      verifyToken,
+      verifyPermission("monitors.view", {
+        ResourceModel: Monitor,
+        requireResource: true,
+      }),
+      this.controller.get
+    );
 
-export default router;
+    this.router.delete(
+      "/:id",
+      verifyToken,
+      verifyPermission("monitors.deletes", {
+        ResourceModel: Monitor,
+        requireResource: true,
+      }),
+      this.controller.delete
+    );
+  };
+
+  getRouter() {
+    return this.router;
+  }
+}
+
+export default MonitorRoutes;
