@@ -1,0 +1,208 @@
+import { IJob } from "super-simple-scheduler/dist/job/job.js";
+import { Monitor, IMonitor } from "../../db/models/index.js";
+import Scheduler from "super-simple-scheduler";
+
+export interface IJobMetrics {
+  jobs: number;
+  activeJobs: number;
+  failingJobs: number;
+  jobsWithFailures: Array<{
+    monitorId: string | number;
+    monitorUrl: string | null;
+    monitorType: string | null;
+    failedAt: number | null;
+    failCount: number | null;
+    failReason: string | null;
+  }>;
+  totalRuns: number;
+  totalFailures: number;
+}
+
+export interface IJobData extends IJob {
+  lastRunTook: number | null;
+}
+
+export interface IJobQueue {
+  scheduler: Scheduler;
+  init: () => Promise<boolean>;
+  addJob: (monitor: IMonitor) => Promise<boolean>;
+  pauseJob: (monitor: IMonitor) => Promise<boolean>;
+  resumeJob: (monitor: IMonitor) => Promise<boolean>;
+  updateJob: (monitor: IMonitor) => Promise<boolean>;
+  deleteJob: (monitor: IMonitor) => Promise<boolean>;
+  getMetrics: () => Promise<IJobMetrics | null>;
+  getJobs: () => Promise<IJobData[] | null>;
+  shutdown: () => Promise<boolean>;
+}
+
+export default class JobQueue implements IJobQueue {
+  public scheduler: Scheduler;
+
+  constructor() {
+    this.scheduler = new Scheduler({
+      logLevel: "debug",
+    });
+  }
+
+  static async create() {
+    const instance = new JobQueue();
+    await instance.init();
+    return instance;
+  }
+
+  init = async () => {
+    try {
+      this.scheduler.start();
+      // Add template and jobs
+      this.scheduler.addTemplate("monitor-job", async () => {
+        throw new Error("Not implemented");
+      });
+
+      const monitors = await Monitor.find();
+      for (const monitor of monitors) {
+        this.addJob(monitor);
+      }
+
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  };
+
+  addJob = async (monitor: IMonitor) => {
+    try {
+      return await this.scheduler?.addJob({
+        id: monitor._id.toString(),
+        template: "monitor-job",
+        repeat: monitor.interval,
+        active: monitor.isActive,
+        data: monitor.toObject(),
+      });
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  };
+
+  pauseJob = async (monitor: IMonitor) => {
+    try {
+      return await this.scheduler?.pauseJob(monitor._id.toString());
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  };
+
+  resumeJob = async (monitor: IMonitor) => {
+    try {
+      return await this.scheduler.resumeJob(monitor._id.toString());
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  };
+
+  updateJob = async (monitor: IMonitor) => {
+    try {
+      return await this.scheduler.updateJob(monitor._id.toString(), {
+        repeat: monitor.interval,
+        data: monitor.toObject(),
+      });
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  };
+
+  deleteJob = async (monitor: IMonitor) => {
+    try {
+      this.scheduler?.removeJob(monitor._id.toString());
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  };
+
+  getMetrics = async (): Promise<IJobMetrics | null> => {
+    try {
+      const jobs = await this.scheduler.getJobs();
+      const metrics: IJobMetrics = jobs.reduce<IJobMetrics>(
+        (acc, job) => {
+          if (!job.data) return acc;
+
+          acc.totalRuns += job.runCount || 0;
+          acc.totalFailures += job.failCount || 0;
+          acc.jobs++;
+
+          // Check if job is currently failing (has recent failures)
+          const hasFailures = job.failCount && job.failCount > 0;
+          const isCurrentlyFailing =
+            hasFailures &&
+            job.lastFailedAt &&
+            (!job.lastRunAt || job.lastFailedAt > job.lastRunAt);
+
+          if (isCurrentlyFailing) {
+            acc.failingJobs++;
+          }
+
+          if (job.lockedAt) {
+            acc.activeJobs++;
+          }
+
+          if (hasFailures) {
+            acc.jobsWithFailures.push({
+              monitorId: job.id,
+              monitorUrl: job.data?.url || null,
+              monitorType: job.data?.type || null,
+              failedAt: job.lastFailedAt || null,
+              failCount: job.failCount || null,
+              failReason: job.lastFailReason || null,
+            });
+          }
+          return acc;
+        },
+        {
+          jobs: 0,
+          activeJobs: 0,
+          failingJobs: 0,
+          jobsWithFailures: [],
+          totalRuns: 0,
+          totalFailures: 0,
+        }
+      );
+      return metrics;
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  };
+
+  getJobs = async (): Promise<IJobData[] | null> => {
+    try {
+      const jobs = await this.scheduler.getJobs();
+      return jobs.map((job) => {
+        return {
+          ...job,
+          lastRunTook:
+            job.lockedAt || !job.lastFinishedAt || !job.lastRunAt
+              ? null
+              : job.lastFinishedAt - job.lastRunAt,
+        };
+      });
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  };
+
+  shutdown = async () => {
+    try {
+      return await this.scheduler.stop();
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  };
+}

@@ -1,19 +1,28 @@
 import "dotenv/config";
-import express from "express";
-import { connectDatabase } from "./db/index.js";
-import authRoutes from "./routes/auth.js";
-import monitorRoutes from "./routes/monitors.js";
-import { errorHandler } from "./middleware/ErrorHandler.js";
-const app = express();
-const PORT = process.env.PORT || 55555;
-connectDatabase();
-app.use(express.json());
-const v1ApiRouter = express.Router();
-v1ApiRouter.use("/auth", authRoutes);
-v1ApiRouter.use("/monitors", monitorRoutes);
+import { connectDatabase, disconnectDatabase } from "./db/index.js";
+import JobQueue, { IJobQueue } from "./services/infrastructure/JobQueue.js";
 
-app.use("/api/v1", v1ApiRouter);
-app.use(errorHandler);
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+import app from "./app.js";
+
+const PORT = process.env.PORT || 55555;
+let jobQueue: IJobQueue;
+
+const startServer = async () => {
+  await connectDatabase();
+  jobQueue = await JobQueue.create();
+
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+};
+
+const stopServer = async () => {
+  await disconnectDatabase();
+  await jobQueue.shutdown();
+  process.exit(0);
+};
+
+process.on("SIGTERM", stopServer);
+process.on("SIGINT", stopServer);
+
+startServer();
