@@ -1,5 +1,3 @@
-export { Organization } from "./auth/Organization.js";
-export type { IOrganization } from "./auth/Organization.js";
 export { Team } from "./auth/Team.js";
 export type { ITeam } from "./auth/Team.js";
 export { User } from "./auth/User.js";

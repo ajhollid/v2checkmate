@@ -4,7 +4,6 @@ export interface ITeam extends Document {
   _id: Types.ObjectId;
   name: string;
   description?: string;
-  organizationId: Types.ObjectId;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -23,11 +22,7 @@ const teamSchema = new Schema<ITeam>(
       trim: true,
       maxlength: 500,
     },
-    organizationId: {
-      type: Schema.Types.ObjectId,
-      ref: "Organization",
-      required: true,
-    },
+
     isActive: {
       type: Boolean,
       default: true,
@@ -38,7 +33,6 @@ const teamSchema = new Schema<ITeam>(
   }
 );
 
-teamSchema.index({ organizationId: 1, name: 1 }, { unique: true });
-teamSchema.index({ organizationId: 1 });
+teamSchema.index({ name: 1 }, { unique: true });
 
 export const Team = mongoose.model<ITeam>("Team", teamSchema);

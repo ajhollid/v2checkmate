@@ -1,13 +1,11 @@
-import mongoose, { Schema, Document, Types } from 'mongoose';
+import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IRole extends Document {
   _id: Types.ObjectId;
   name: string;
   description?: string;
-  organizationId: Types.ObjectId;
   teamId?: Types.ObjectId;
   permissions: string[];
-  level: 'organization' | 'team';
   isSystem: boolean;
   isActive: boolean;
   createdAt: Date;
@@ -27,24 +25,16 @@ const roleSchema = new Schema<IRole>(
       trim: true,
       maxlength: 200,
     },
-    organizationId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Organization',
-      required: true,
-    },
     teamId: {
       type: Schema.Types.ObjectId,
-      ref: 'Team',
+      ref: "Team",
     },
-    permissions: [{
-      type: String,
-      required: true,
-    }],
-    level: {
-      type: String,
-      enum: ['organization', 'team'],
-      required: true,
-    },
+    permissions: [
+      {
+        type: String,
+        required: true,
+      },
+    ],
     isSystem: {
       type: Boolean,
       default: false,
@@ -56,13 +46,11 @@ const roleSchema = new Schema<IRole>(
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
   }
 );
 
-roleSchema.index({ organizationId: 1, name: 1 }, { unique: true });
-roleSchema.index({ organizationId: 1, teamId: 1 });
+roleSchema.index({ teamId: 1, name: 1 }, { unique: true });
+roleSchema.index({ teamId: 1 });
 roleSchema.index({ level: 1 });
 
-export const Role = mongoose.model<IRole>('Role', roleSchema);
+export const Role = mongoose.model<IRole>("Role", roleSchema);

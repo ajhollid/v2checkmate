@@ -75,7 +75,7 @@ const hasPermission = (
     (role) =>
       role.isActive &&
       role.level === "team" &&
-      role.organizationId?.toString() === organizationId &&
+      role.organizationzId?.toString() === organizationId &&
       role.teamId?.toString() === teamId
   );
 

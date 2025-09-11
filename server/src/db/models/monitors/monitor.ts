@@ -9,7 +9,6 @@ export interface IMonitor extends Document {
   isActive: boolean;
   status: "up" | "down" | "paused" | "initializing";
   lastCheckedAt?: Date;
-  organizationId: Types.ObjectId;
   teamId?: Types.ObjectId;
   createdBy: Types.ObjectId;
   updatedBy: Types.ObjectId;
@@ -35,11 +34,6 @@ const MonitorSchema = new Schema<IMonitor>(
       enum: ["up", "down", "paused", "initializing"],
     },
     lastCheckedAt: { type: Date },
-    organizationId: {
-      type: Schema.Types.ObjectId,
-      ref: "Organization",
-      required: true,
-    },
     teamId: { type: Schema.Types.ObjectId, ref: "Team", required: true },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },

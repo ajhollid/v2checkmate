@@ -4,7 +4,6 @@ export interface ICheck extends Document {
   _id: Types.ObjectId;
   monitorId: Types.ObjectId;
   teamId?: Types.ObjectId;
-  organizationId: Types.ObjectId;
   type: "http" | "https";
   status: "up" | "down";
   responseTime?: number; // in ms
@@ -41,11 +40,7 @@ const CheckSchema = new Schema<ICheck>(
   {
     monitorId: { type: Schema.Types.ObjectId, ref: "Monitor", required: true },
     teamId: { type: Schema.Types.ObjectId, ref: "Team" },
-    organizationId: {
-      type: Schema.Types.ObjectId,
-      ref: "Organization",
-      required: true,
-    },
+
     type: {
       type: String,
       required: true,
@@ -92,10 +87,8 @@ const CheckSchema = new Schema<ICheck>(
 
 CheckSchema.index({ monitorId: 1 });
 CheckSchema.index({ monitorId: 1, createdAt: -1 });
-CheckSchema.index({ organizationId: 1 });
-CheckSchema.index({ organizationId: 1, teamId: 1 });
-CheckSchema.index({ organizationId: 1, status: 1 });
-CheckSchema.index({ organizationId: 1, createdAt: -1 });
+CheckSchema.index({ teamId: 1, status: 1 });
+CheckSchema.index({ teamId: 1, createdAt: -1 });
 CheckSchema.index({ status: 1, ack: 1 });
 CheckSchema.index({ ack: 1, ackAt: 1 });
 CheckSchema.index({ expiry: 1 });
