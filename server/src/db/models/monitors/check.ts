@@ -6,6 +6,7 @@ export interface ICheck extends Document {
   teamId?: Types.ObjectId;
   type: "http" | "https";
   status: "up" | "down";
+  message: string;
   responseTime?: number; // in ms
   timings?: {
     start: Date;
@@ -51,6 +52,7 @@ const CheckSchema = new Schema<ICheck>(
       required: true,
       enum: ["up", "down"],
     },
+    message: { type: String, trim: true },
     responseTime: { type: Number },
     timings: {
       start: { type: Date },
