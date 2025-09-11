@@ -1,7 +1,6 @@
 import bcrypt from "bcryptjs";
 import {
   User,
-  Organization,
   Team,
   Role,
   ITokenizedUser,
@@ -11,9 +10,8 @@ import {
 const DEFAULT_ROLES = [
   {
     name: "Admin",
-    description: "Organization administrator with full permissions",
+    description: "Admin with full permissions",
     permissions: ["*"],
-    level: "organization" as const,
     isSystem: true,
   },
   {
@@ -27,7 +25,6 @@ const DEFAULT_ROLES = [
       "teams.delete",
       "monitors.*",
     ],
-    level: "organization" as const,
     isSystem: true,
   },
   {
@@ -36,12 +33,10 @@ const DEFAULT_ROLES = [
     permissions: [
       "profile.update",
       "teams.view",
-      "tasks.view",
       "monitors.create",
       "monitors.view",
       "monitors.update",
     ],
-    level: "team" as const,
     isSystem: true,
   },
 ];
@@ -50,9 +45,8 @@ export interface RegisterData {
   email: string;
   firstName: string;
   lastName: string;
+  teamId: string;
   password: string;
-  organizationName: string;
-  organizationDescription?: string;
 }
 
 export interface LoginData {
@@ -64,14 +58,7 @@ export type AuthResult = ITokenizedUser;
 
 class AuthService {
   async register(signupData: RegisterData): Promise<ITokenizedUser> {
-    const {
-      email,
-      firstName,
-      lastName,
-      password,
-      organizationName,
-      organizationDescription,
-    } = signupData;
+    const { email, firstName, lastName, password } = signupData;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -79,18 +66,10 @@ class AuthService {
       throw new Error("User with this email already exists");
     }
 
-    // Create organization
-    const organization = new Organization({
-      name: organizationName,
-      description: organizationDescription,
-    });
-    await organization.save();
-
     // Create default team
     const defaultTeam = new Team({
       name: "General",
       description: "Default team for organization",
-      organizationId: organization._id,
     });
     await defaultTeam.save();
 
@@ -98,8 +77,7 @@ class AuthService {
     const rolePromises = DEFAULT_ROLES.map((roleData) =>
       new Role({
         ...roleData,
-        organizationId: organization._id,
-        teamId: roleData.name === "Member" ? defaultTeam._id : undefined,
+        teamId: defaultTeam._id,
       }).save()
     );
     const roles = await Promise.all(rolePromises);
@@ -115,8 +93,8 @@ class AuthService {
       email,
       firstName,
       lastName,
+      teamId: defaultTeam._id,
       passwordHash,
-      organizationId: organization._id,
       roles: [adminRole!._id],
     });
 
@@ -124,9 +102,8 @@ class AuthService {
 
     return {
       sub: savedUser._id.toString(),
-      organizationId: savedUser.organizationId.toString(),
       roles: savedUser.roles.map((role) => role.toString()),
-      teamId: [defaultTeam._id.toString()],
+      teamId: defaultTeam._id.toString(),
     };
   }
 
@@ -146,33 +123,15 @@ class AuthService {
       throw new Error("Invalid email or password");
     }
 
-    // Get organization and team information
-    const organization = await Organization.findById(user.organizationId);
-
-    if (!organization) {
-      throw new Error("Organization not found");
-    }
-
-    const teams = await Team.find({
-      organizationId: user.organizationId,
-      name: "General",
-    });
-
-    if (teams.length === 0) {
-      throw new Error("Teams not found");
-    }
-
     return {
       sub: user._id.toString(),
-      organizationId: user.organizationId.toString(),
-      teamId: teams.map((team) => team._id.toString()),
+      teamId: user.teamId.toString(),
       roles: user.roles.map((role) => role.toString()),
     };
   }
 
   async cleanup() {
     await User.deleteMany({});
-    await Organization.deleteMany({});
     await Team.deleteMany({});
     await Role.deleteMany({});
     await Monitor.deleteMany({});

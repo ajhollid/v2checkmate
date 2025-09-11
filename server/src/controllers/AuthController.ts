@@ -10,18 +10,11 @@ class AuthController {
 
   register = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const {
-        email,
-        firstName,
-        lastName,
-        password,
-        organizationName,
-        organizationDescription,
-      } = req.body;
+      const { email, firstName, lastName, password } = req.body;
 
-      if (!email || !firstName || !lastName || !password || !organizationName) {
+      if (!email || !firstName || !lastName || !password) {
         throw new Error(
-          "Email, firstName, lastName, password, and organizationName are required"
+          "Email, firstName, lastName, and password are required"
         );
       }
 
@@ -30,14 +23,12 @@ class AuthController {
         firstName,
         lastName,
         password,
-        organizationName,
-        organizationDescription,
       });
 
       const token = encode(result);
 
       res.status(201).json({
-        message: "User and organization created successfully",
+        message: "User and  created successfully",
         data: token,
       });
     } catch (error) {

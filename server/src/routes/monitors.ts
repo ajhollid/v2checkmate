@@ -17,7 +17,7 @@ class MonitorRoutes {
     this.router.post(
       "/",
       verifyToken,
-      verifyPermission("monitors.create", {
+      verifyPermission(["monitors.create"], {
         ResourceModel: Monitor,
         requireResource: false,
       }),
@@ -27,7 +27,7 @@ class MonitorRoutes {
     this.router.patch(
       "/:id",
       verifyToken,
-      verifyPermission("monitors.update", {
+      verifyPermission(["monitors.update"], {
         ResourceModel: Monitor,
         requireResource: true,
       }),
@@ -37,7 +37,7 @@ class MonitorRoutes {
     this.router.get(
       "/:id",
       verifyToken,
-      verifyPermission("monitors.view", {
+      verifyPermission(["monitors.view"], {
         ResourceModel: Monitor,
         requireResource: true,
       }),
@@ -47,7 +47,7 @@ class MonitorRoutes {
     this.router.delete(
       "/:id",
       verifyToken,
-      verifyPermission("monitors.deletes", {
+      verifyPermission(["monitors.delete"], {
         ResourceModel: Monitor,
         requireResource: true,
       }),
