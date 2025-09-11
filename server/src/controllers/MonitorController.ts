@@ -1,16 +1,21 @@
 import { Request, Response, NextFunction } from "express";
-import monitorService from "../services/business/monitorService.js";
 import ApiError from "../utils/ApiError.js";
+import MonitorService from "../services/business/MonitorService.js";
 
 class MonitorController {
-  async create(req: Request, res: Response, next: NextFunction) {
+  private monitorService: MonitorService;
+  constructor(monitorService: MonitorService) {
+    this.monitorService = monitorService;
+  }
+
+  create = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const tokenizedUser = req.user;
       if (!tokenizedUser) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const monitor = await monitorService.create(tokenizedUser, req.body);
+      const monitor = await this.monitorService.create(tokenizedUser, req.body);
       res.status(201).json({
         message: "Monitor created successfully",
         data: monitor,
@@ -18,9 +23,9 @@ class MonitorController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
-  async get(req: Request, res: Response, next: NextFunction) {
+  get = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const tokenizedUser = req.user;
       if (!tokenizedUser) {
@@ -28,7 +33,7 @@ class MonitorController {
       }
 
       const resource = req.resource; // Retrieved from middleware
-      const monitor = await monitorService.get(resource);
+      const monitor = await this.monitorService.get(resource);
 
       res.status(200).json({
         message: "Monitor retrieved successfully",
@@ -37,9 +42,9 @@ class MonitorController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
-  async update(req: Request, res: Response, next: NextFunction) {
+  update = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const tokenizedUser = req.user;
       if (!tokenizedUser) {
@@ -51,7 +56,7 @@ class MonitorController {
         throw new ApiError("Monitor not found", 404);
       }
 
-      const monitor = await monitorService.update(
+      const monitor = await this.monitorService.update(
         tokenizedUser,
         resource,
         req.body
@@ -63,9 +68,9 @@ class MonitorController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
-  async delete(req: Request, res: Response, next: NextFunction) {
+  delete = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const tokenizedUser = req.user;
       if (!tokenizedUser) {
@@ -73,7 +78,7 @@ class MonitorController {
       }
 
       const monitor = req.resource; // Retrieved from middleware
-      await monitorService.delete(monitor);
+      await this.monitorService.delete(monitor);
       if (!monitor) {
         throw new ApiError("Monitor not found", 404);
       }
@@ -84,7 +89,7 @@ class MonitorController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 }
 
-export default new MonitorController();
+export default MonitorController;

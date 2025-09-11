@@ -43,4 +43,4 @@ class MonitorService {
   }
 }
 
-export default new MonitorService();
+export default MonitorService;

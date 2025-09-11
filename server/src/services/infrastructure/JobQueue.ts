@@ -23,7 +23,6 @@ export interface IJobData extends IJob {
 }
 
 export interface IJobQueue {
-  scheduler: Scheduler;
   init: () => Promise<boolean>;
   addJob: (monitor: IMonitor) => Promise<boolean>;
   pauseJob: (monitor: IMonitor) => Promise<boolean>;
@@ -32,11 +31,13 @@ export interface IJobQueue {
   deleteJob: (monitor: IMonitor) => Promise<boolean>;
   getMetrics: () => Promise<IJobMetrics | null>;
   getJobs: () => Promise<IJobData[] | null>;
+  flush: () => Promise<boolean>;
   shutdown: () => Promise<boolean>;
 }
 
 export default class JobQueue implements IJobQueue {
-  public scheduler: Scheduler;
+  private scheduler: Scheduler;
+  private static instance: JobQueue | null = null;
 
   constructor() {
     this.scheduler = new Scheduler({
@@ -45,9 +46,16 @@ export default class JobQueue implements IJobQueue {
   }
 
   static async create() {
-    const instance = new JobQueue();
-    await instance.init();
-    return instance;
+    if (!JobQueue.instance) {
+      const instance = new JobQueue();
+      await instance.init();
+      JobQueue.instance = instance;
+    }
+    return JobQueue.instance;
+  }
+
+  static getInstance(): JobQueue | null {
+    return JobQueue.instance;
   }
 
   init = async () => {
@@ -55,7 +63,7 @@ export default class JobQueue implements IJobQueue {
       this.scheduler.start();
       // Add template and jobs
       this.scheduler.addTemplate("monitor-job", async () => {
-        throw new Error("Not implemented");
+        // throw new Error("Not implemented");
       });
 
       const monitors = await Monitor.find();
@@ -194,6 +202,15 @@ export default class JobQueue implements IJobQueue {
     } catch (error) {
       console.error(error);
       return null;
+    }
+  };
+
+  flush = async () => {
+    try {
+      return await this.scheduler.flushJobs();
+    } catch (error) {
+      console.error(error);
+      return false;
     }
   };
 

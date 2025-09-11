@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { AuthResult } from "../services/business/authService.js";
+import { AuthResult } from "../services/business/AuthService.js";
 
 const encode = (data: AuthResult): string => {
   const secret = process.env.JWT_SECRET;
