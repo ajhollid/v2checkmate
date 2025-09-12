@@ -1,11 +1,11 @@
 import { Got } from "got";
 import { IMonitor } from "../../db/models/index.js";
-import { GotTimings } from "../../db/models/monitors/check.js";
+import { GotTimings } from "../../db/models/monitors/Check.js";
 import type { Response } from "got";
 import {
   MonitorType,
   MonitorStatus,
-} from "../../db/models/monitors/monitor.js";
+} from "../../db/models/monitors/Monitor.js";
 export interface INetworkService {
   requestHttp: (monitor: IMonitor) => Promise<StatusResponse>;
   requestStatus: (monitor: IMonitor) => Promise<StatusResponse>;

@@ -68,6 +68,18 @@ export default class JobQueue implements IJobQueue {
         this.jobGenerator.generateJob()
       );
 
+      // Add a cleanup job
+      this.scheduler.addTemplate(
+        "cleanup-job",
+        this.jobGenerator.generateCleanupJob()
+      );
+      await this.scheduler.addJob({
+        id: "cleanup-orphaned-checks",
+        template: "cleanup-job",
+        repeat: 24 * 60 * 60 * 1000, // 24 hours
+        active: true,
+      });
+
       const monitors = await Monitor.find();
       for (const monitor of monitors) {
         this.addJob(monitor);
@@ -87,7 +99,7 @@ export default class JobQueue implements IJobQueue {
         template: "monitor-job",
         repeat: monitor.interval,
         active: monitor.isActive,
-        data: monitor.toObject(),
+        data: monitor,
       });
     } catch (error) {
       console.error(error);
@@ -117,7 +129,7 @@ export default class JobQueue implements IJobQueue {
     try {
       return await this.scheduler.updateJob(monitor._id.toString(), {
         repeat: monitor.interval,
-        data: monitor.toObject(),
+        data: monitor,
       });
     } catch (error) {
       console.error(error);

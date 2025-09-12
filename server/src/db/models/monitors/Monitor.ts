@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
+import { Check } from "../index.js";
 
 export const MonitorTypes = ["http", "https"] as const;
 export type MonitorType = (typeof MonitorTypes)[number];
@@ -18,6 +19,9 @@ export interface IMonitor extends Document {
   interval: number; // in ms
   isActive: boolean;
   status: MonitorStatus;
+  n: number; // Number of consecutive successes required to change status
+  m: number; // Length of the array
+  lastStatuses: string[]; // Array to store last few statuses
   lastCheckedAt?: Date;
   createdBy: Types.ObjectId;
   updatedBy: Types.ObjectId;
@@ -42,11 +46,33 @@ const MonitorSchema = new Schema<IMonitor>(
       default: "initializing",
       enum: MonitorStatuses,
     },
+    n: { type: Number, required: true, default: 1 },
+    m: { type: Number, required: true, default: 2 },
+    lastStatuses: {
+      type: [String],
+      enum: MonitorStatuses,
+      default: [],
+      maxLength: 10,
+    },
     lastCheckedAt: { type: Date },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }
+);
+
+MonitorSchema.pre(
+  "deleteOne",
+  { document: true, query: false },
+  async function (next) {
+    try {
+      const monitorId = this._id;
+      await Check.deleteMany({ monitorId });
+      next();
+    } catch (error: any) {
+      next(error);
+    }
+  }
 );
 
 MonitorSchema.index({ isActive: 1 });
