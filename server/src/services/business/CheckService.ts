@@ -1,13 +1,13 @@
 import { ICheck, Check } from "../../db/models/index.js";
-import { IStatusResponse } from "../infrastructure/NetworkService.js";
+import { StatusResponse } from "../infrastructure/NetworkService.js";
 import mongoose from "mongoose";
 
 export interface ICheckService {
-  buildCheck: (statusResponse: IStatusResponse) => Promise<ICheck>;
+  buildCheck: (statusResponse: StatusResponse) => Promise<ICheck>;
 }
 
 class CheckService implements ICheckService {
-  buildCheck = async (statusResponse: IStatusResponse): Promise<ICheck> => {
+  buildCheck = async (statusResponse: StatusResponse): Promise<ICheck> => {
     const monitorId = new mongoose.Types.ObjectId(statusResponse.monitorId);
 
     const check = new Check({
