@@ -3,7 +3,6 @@ class MonitorService {
   async create(tokenizedUser: ITokenizedUser, monitorData: IMonitor) {
     const monitor: IMonitor = new Monitor({
       ...monitorData,
-      teamId: tokenizedUser.teamId,
       createdBy: tokenizedUser.sub,
       updatedBy: tokenizedUser.sub,
     });

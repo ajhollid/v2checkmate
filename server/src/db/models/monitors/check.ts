@@ -1,32 +1,41 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
+import {
+  MonitorType,
+  MonitorTypes,
+  MonitorStatus,
+  MonitorStatuses,
+} from "./monitor.js";
+
+export interface ITimingPhases {
+  wait: number;
+  dns: number;
+  tcp: number;
+  tls: number;
+  request: number;
+  firstByte: number;
+  download: number;
+  total: number;
+}
+
+export interface IRequestTimings {
+  start: Date;
+  socket: Date;
+  lookup: Date;
+  connect: Date;
+  secureConnect: Date;
+  response: Date;
+  end: Date;
+  phases: ITimingPhases;
+}
 
 export interface ICheck extends Document {
   _id: Types.ObjectId;
   monitorId: Types.ObjectId;
-  teamId?: Types.ObjectId;
-  type: "http" | "https";
-  status: "up" | "down";
+  type: MonitorType;
+  status: MonitorStatus;
   message: string;
   responseTime?: number; // in ms
-  timings?: {
-    start: Date;
-    socket: Date;
-    lookup: Date;
-    connect: Date;
-    secureConnect: Date;
-    response: Date;
-    end: Date;
-    phases: {
-      wait: number;
-      dns: number;
-      tcp: number;
-      tls: number;
-      request: number;
-      firstByte: number;
-      download: number;
-      total: number;
-    };
-  };
+  timings?: IRequestTimings;
   httpStatusCode?: number;
   errorMessage?: string;
   ack: boolean;
@@ -40,17 +49,16 @@ export interface ICheck extends Document {
 const CheckSchema = new Schema<ICheck>(
   {
     monitorId: { type: Schema.Types.ObjectId, ref: "Monitor", required: true },
-    teamId: { type: Schema.Types.ObjectId, ref: "Team" },
 
     type: {
       type: String,
       required: true,
-      enum: ["http", "https"],
+      enum: MonitorTypes,
     },
     status: {
       type: String,
       required: true,
-      enum: ["up", "down"],
+      enum: MonitorStatuses,
     },
     message: { type: String, trim: true },
     responseTime: { type: Number },
@@ -89,8 +97,7 @@ const CheckSchema = new Schema<ICheck>(
 
 CheckSchema.index({ monitorId: 1 });
 CheckSchema.index({ monitorId: 1, createdAt: -1 });
-CheckSchema.index({ teamId: 1, status: 1 });
-CheckSchema.index({ teamId: 1, createdAt: -1 });
+CheckSchema.index({ status: 1 });
 CheckSchema.index({ status: 1, ack: 1 });
 CheckSchema.index({ ack: 1, ackAt: 1 });
 CheckSchema.index({ expiry: 1 });

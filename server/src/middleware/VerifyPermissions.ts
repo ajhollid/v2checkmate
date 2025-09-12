@@ -30,11 +30,6 @@ const getCachedRoles = async (userId: string) => {
   return roles;
 };
 
-const permissionMatch = (
-  permissions: string[],
-  requiredPermissions: string[]
-) => {};
-
 const hasPermission = (roles: IRole[], requiredPermissions: string[]) => {
   const userPermissions = [
     ...new Set(roles.flatMap((role) => role.permissions)),
@@ -74,8 +69,6 @@ const verifyPermission = (
       throw new ApiError("No user ID", 400);
     }
 
-    let teamId: string | undefined;
-
     const resourceRequired = options?.ResourceModel && options?.requireResource;
     if (resourceRequired) {
       // Accessing an existing resource
@@ -89,24 +82,14 @@ const verifyPermission = (
         throw new ApiError("Resource not found", 404);
       }
 
-      teamId = resource?.teamId?.toString();
-
-      if (teamId && tokenizedUser.teamId !== teamId) {
-        {
-          throw new ApiError("Resource does not belong to user's team", 403);
-        }
-      }
       req.resource = resource;
-    } else {
-      // Creating a resource
-      teamId = req.body.teamId || req.params.teamId;
     }
 
     const userRoles = await getCachedRoles(userId);
     if (!userRoles) {
       throw new ApiError("User roles not found", 400);
     }
-    const allowed = hasPermission(userRoles, resourceActions, teamId);
+    const allowed = hasPermission(userRoles, resourceActions);
     if (!allowed) {
       throw new ApiError("Insufficient permissions", 403);
     }

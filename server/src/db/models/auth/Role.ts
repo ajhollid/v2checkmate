@@ -4,7 +4,6 @@ export interface IRole extends Document {
   _id: Types.ObjectId;
   name: string;
   description?: string;
-  teamId?: Types.ObjectId;
   permissions: string[];
   isSystem: boolean;
   isActive: boolean;
@@ -25,10 +24,7 @@ const roleSchema = new Schema<IRole>(
       trim: true,
       maxlength: 200,
     },
-    teamId: {
-      type: Schema.Types.ObjectId,
-      ref: "Team",
-    },
+
     permissions: [
       {
         type: String,
@@ -49,8 +45,6 @@ const roleSchema = new Schema<IRole>(
   }
 );
 
-roleSchema.index({ teamId: 1, name: 1 }, { unique: true });
-roleSchema.index({ teamId: 1 });
-roleSchema.index({ level: 1 });
+roleSchema.index({ name: 1 }, { unique: true });
 
 export const Role = mongoose.model<IRole>("Role", roleSchema);

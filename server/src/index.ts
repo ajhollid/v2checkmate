@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { connectDatabase, disconnectDatabase } from "./db/index.js";
-import CheckService from "./services/infrastructure/CheckService.js";
+import CheckService from "./services/business/CheckService.js";
 import NetworkService from "./services/infrastructure/NetworkService.js";
 import JobQueue, { IJobQueue } from "./services/infrastructure/JobQueue.js";
 import JobGenerator from "./services/infrastructure/JobGenerator.js";

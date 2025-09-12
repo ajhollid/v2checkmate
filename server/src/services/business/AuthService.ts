@@ -1,7 +1,6 @@
 import bcrypt from "bcryptjs";
 import {
   User,
-  Team,
   Role,
   ITokenizedUser,
   Monitor,
@@ -17,14 +16,7 @@ const DEFAULT_ROLES = [
   {
     name: "Manager",
     description: "Can manage teams and users",
-    permissions: [
-      "users.create",
-      "users.update",
-      "teams.manage",
-      "teams.create",
-      "teams.delete",
-      "monitors.*",
-    ],
+    permissions: ["users.create", "users.update", "monitors.*"],
     isSystem: true,
   },
   {
@@ -32,7 +24,6 @@ const DEFAULT_ROLES = [
     description: "Basic team member",
     permissions: [
       "profile.update",
-      "teams.view",
       "monitors.create",
       "monitors.view",
       "monitors.update",
@@ -66,18 +57,10 @@ class AuthService {
       throw new Error("User with this email already exists");
     }
 
-    // Create default team
-    const defaultTeam = new Team({
-      name: "General",
-      description: "Default team for organization",
-    });
-    await defaultTeam.save();
-
     // Create all default roles for the organization
     const rolePromises = DEFAULT_ROLES.map((roleData) =>
       new Role({
         ...roleData,
-        teamId: defaultTeam._id,
       }).save()
     );
     const roles = await Promise.all(rolePromises);
@@ -93,7 +76,6 @@ class AuthService {
       email,
       firstName,
       lastName,
-      teamId: defaultTeam._id,
       passwordHash,
       roles: [adminRole!._id],
     });
@@ -103,7 +85,6 @@ class AuthService {
     return {
       sub: savedUser._id.toString(),
       roles: savedUser.roles.map((role) => role.toString()),
-      teamId: defaultTeam._id.toString(),
     };
   }
 
@@ -125,14 +106,12 @@ class AuthService {
 
     return {
       sub: user._id.toString(),
-      teamId: user.teamId.toString(),
       roles: user.roles.map((role) => role.toString()),
     };
   }
 
   async cleanup() {
     await User.deleteMany({});
-    await Team.deleteMany({});
     await Role.deleteMany({});
     await Monitor.deleteMany({});
     await Check.deleteMany({});
