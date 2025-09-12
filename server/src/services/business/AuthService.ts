@@ -32,18 +32,18 @@ const DEFAULT_ROLES = [
   },
 ];
 
-export interface RegisterData {
+export type RegisterData = {
   email: string;
   firstName: string;
   lastName: string;
   teamId: string;
   password: string;
-}
+};
 
-export interface LoginData {
+export type LoginData = {
   email: string;
   password: string;
-}
+};
 
 export type AuthResult = ITokenizedUser;
 

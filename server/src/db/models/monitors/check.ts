@@ -5,7 +5,8 @@ import {
   MonitorStatus,
   MonitorStatuses,
 } from "./monitor.js";
-
+import type { Response } from "got";
+export type GotTimings = Response["timings"];
 export interface ITimingPhases {
   wait: number;
   dns: number;
@@ -17,17 +18,6 @@ export interface ITimingPhases {
   total: number;
 }
 
-export interface IRequestTimings {
-  start: Date;
-  socket: Date;
-  lookup: Date;
-  connect: Date;
-  secureConnect: Date;
-  response: Date;
-  end: Date;
-  phases: ITimingPhases;
-}
-
 export interface ICheck extends Document {
   _id: Types.ObjectId;
   monitorId: Types.ObjectId;
@@ -35,7 +25,7 @@ export interface ICheck extends Document {
   status: MonitorStatus;
   message: string;
   responseTime?: number; // in ms
-  timings?: IRequestTimings;
+  timings?: GotTimings;
   httpStatusCode?: number;
   errorMessage?: string;
   ack: boolean;

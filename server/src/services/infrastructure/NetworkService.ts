@@ -1,21 +1,25 @@
 import { Got } from "got";
 import { IMonitor } from "../../db/models/index.js";
-
+import { GotTimings } from "../../db/models/monitors/check.js";
+import type { Response } from "got";
+import {
+  MonitorType,
+  MonitorStatus,
+} from "../../db/models/monitors/monitor.js";
 export interface INetworkService {
-  requestHttp: (monitor: IMonitor) => Promise<IStatusResponse>;
-  requestStatus: (monitor: IMonitor) => Promise<IStatusResponse>;
+  requestHttp: (monitor: IMonitor) => Promise<StatusResponse>;
+  requestStatus: (monitor: IMonitor) => Promise<StatusResponse>;
 }
 
-export interface IStatusResponse {
+export type StatusResponse = {
   monitorId: string;
-  teamId: string;
-  type: "http" | "https";
+  type: MonitorType;
   code: number;
-  status: "up" | "down";
+  status: MonitorStatus;
   message: string;
   responseTime: number;
-  timings: any;
-}
+  timings: GotTimings;
+};
 
 class NetworkService implements INetworkService {
   private got: Got;
@@ -32,11 +36,9 @@ class NetworkService implements INetworkService {
         throw new Error("No URL provided");
       }
 
-      const response = await this.got(url);
-
-      const statusResponse: IStatusResponse = {
+      const response: Response = await this.got(url);
+      const statusResponse: StatusResponse = {
         monitorId: monitor._id.toString(),
-        teamId: monitor.teamId?.toString() || "",
         type: monitor.type,
         code: response.statusCode,
         status: response.ok === true ? "up" : "down",
@@ -47,9 +49,8 @@ class NetworkService implements INetworkService {
       return statusResponse;
     } catch (error: any) {
       if (error.name === "HTTPError" || error.name === "RequestError") {
-        const statusResponse: IStatusResponse = {
+        const statusResponse: StatusResponse = {
           monitorId: monitor._id.toString(),
-          teamId: monitor.teamId?.toString() || "",
           type: monitor.type,
           code: error?.response?.statusCode || this.NETWORK_ERROR,
           status: "down",

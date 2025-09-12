@@ -1,6 +1,6 @@
 import { IMonitor } from "../../db/models/index.js";
 import { INetworkService } from "./NetworkService.js";
-import { ICheckService } from "./CheckService.js";
+import { ICheckService } from "../business/CheckService.js";
 import ApiError from "../../utils/ApiError.js";
 
 export interface IJobGenerator {
