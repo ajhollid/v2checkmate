@@ -28,7 +28,7 @@ const init = (jobQueue: IJobQueue) => {
   const authRouter = new AuthRoutes(authController);
   v1ApiRouter.use("/auth", authRouter.getRouter());
 
-  const monitorService = new MonitorService();
+  const monitorService = new MonitorService(jobQueue);
   const monitorController = new MonitorController(monitorService);
   const monitorRouter = new MonitorRoutes(monitorController);
   v1ApiRouter.use("/monitors", monitorRouter.getRouter());

@@ -1,9 +1,10 @@
-import { ICheck, Check } from "../../db/models/index.js";
+import { ICheck, Check, Monitor } from "../../db/models/index.js";
 import { StatusResponse } from "../infrastructure/NetworkService.js";
 import mongoose from "mongoose";
 
 export interface ICheckService {
   buildCheck: (statusResponse: StatusResponse) => Promise<ICheck>;
+  cleanupOrphanedChecks: () => Promise<boolean>;
 }
 
 class CheckService implements ICheckService {
@@ -19,6 +20,20 @@ class CheckService implements ICheckService {
       timings: statusResponse.timings,
     });
     return check;
+  };
+
+  cleanupOrphanedChecks = async () => {
+    try {
+      const monitorIds = await Monitor.find().distinct("_id");
+      const result = await Check.deleteMany({
+        monitorId: { $nin: monitorIds },
+      });
+      console.log(`Deleted ${result.deletedCount} orphaned checks.`);
+      return true;
+    } catch (error) {
+      console.error("Error cleaning up orphaned checks:", error);
+      return false;
+    }
   };
 }
 

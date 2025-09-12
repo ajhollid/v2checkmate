@@ -4,7 +4,7 @@ import {
   MonitorTypes,
   MonitorStatus,
   MonitorStatuses,
-} from "./monitor.js";
+} from "./Monitor.js";
 import type { Response } from "got";
 export type GotTimings = Response["timings"];
 export interface ITimingPhases {
@@ -79,7 +79,7 @@ const CheckSchema = new Schema<ICheck>(
     expiry: {
       type: Date,
       default: Date.now,
-      expires: 60 * 60 * 24 * 30,
+      expires: 60 * 60 * 24 * 30, // <-- this creates an index automatically
     },
   },
   { timestamps: true }
@@ -90,7 +90,6 @@ CheckSchema.index({ monitorId: 1, createdAt: -1 });
 CheckSchema.index({ status: 1 });
 CheckSchema.index({ status: 1, ack: 1 });
 CheckSchema.index({ ack: 1, ackAt: 1 });
-CheckSchema.index({ expiry: 1 });
 CheckSchema.index({ createdAt: -1 });
 
 export const Check = mongoose.model<ICheck>("Check", CheckSchema);

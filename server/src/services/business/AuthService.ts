@@ -8,14 +8,20 @@ import {
 } from "../../db/models/index.js";
 const DEFAULT_ROLES = [
   {
-    name: "Admin",
-    description: "Admin with full permissions",
+    name: "SuperAdmin",
+    description: "Super admin with all permissions",
     permissions: ["*"],
     isSystem: true,
   },
   {
+    name: "Admin",
+    description: "Admin with full permissions",
+    permissions: ["monitor.*", "users.*"],
+    isSystem: true,
+  },
+  {
     name: "Manager",
-    description: "Can manage teams and users",
+    description: "Can manage users",
     permissions: ["users.create", "users.update", "monitors.*"],
     isSystem: true,
   },
@@ -23,7 +29,7 @@ const DEFAULT_ROLES = [
     name: "Member",
     description: "Basic team member",
     permissions: [
-      "profile.update",
+      "users.update",
       "monitors.create",
       "monitors.view",
       "monitors.update",
@@ -49,15 +55,15 @@ export type AuthResult = ITokenizedUser;
 
 class AuthService {
   async register(signupData: RegisterData): Promise<ITokenizedUser> {
-    const { email, firstName, lastName, password } = signupData;
+    const userCount = await User.countDocuments();
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      throw new Error("User with this email already exists");
+    if (userCount > 0) {
+      throw new Error("Registration is closed. Please request an invite.");
     }
 
-    // Create all default roles for the organization
+    const { email, firstName, lastName, password } = signupData;
+
+    // Create all default roles
     const rolePromises = DEFAULT_ROLES.map((roleData) =>
       new Role({
         ...roleData,
@@ -70,14 +76,14 @@ class AuthService {
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
     // Find admin role and assign to first user
-    const adminRole = roles.find((role) => role.name === "Admin");
+    const superAdminRole = roles.find((role) => role.name === "SuperAdmin");
 
     const user = new User({
       email,
       firstName,
       lastName,
       passwordHash,
-      roles: [adminRole!._id],
+      roles: [superAdminRole!._id],
     });
 
     const savedUser = await user.save();
