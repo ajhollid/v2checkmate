@@ -1,7 +1,7 @@
 import { IJob } from "super-simple-scheduler/dist/job/job.js";
 import { Monitor, IMonitor } from "../../db/models/index.js";
 import Scheduler from "super-simple-scheduler";
-
+import { IJobGenerator } from "./JobGenerator.js";
 export interface IJobMetrics {
   jobs: number;
   activeJobs: number;
@@ -38,16 +38,17 @@ export interface IJobQueue {
 export default class JobQueue implements IJobQueue {
   private scheduler: Scheduler;
   private static instance: JobQueue | null = null;
-
+  private jobGenerator: any;
   constructor() {
     this.scheduler = new Scheduler({
       logLevel: "debug",
     });
   }
 
-  static async create() {
+  static async create(jobGenerator: IJobGenerator) {
     if (!JobQueue.instance) {
       const instance = new JobQueue();
+      instance.jobGenerator = jobGenerator;
       await instance.init();
       JobQueue.instance = instance;
     }
@@ -62,9 +63,10 @@ export default class JobQueue implements IJobQueue {
     try {
       this.scheduler.start();
       // Add template and jobs
-      this.scheduler.addTemplate("monitor-job", async () => {
-        // throw new Error("Not implemented");
-      });
+      this.scheduler.addTemplate(
+        "monitor-job",
+        this.jobGenerator.generateJob()
+      );
 
       const monitors = await Monitor.find();
       for (const monitor of monitors) {

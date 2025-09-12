@@ -2,7 +2,6 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface ITokenizedUser {
   sub: string;
-  teamId: string;
   roles: string[];
 }
 export interface IUser extends Document {
@@ -11,7 +10,6 @@ export interface IUser extends Document {
   firstName: string;
   lastName: string;
   passwordHash: string;
-  teamId: Types.ObjectId;
   roles: Types.ObjectId[];
   profile: {
     avatar?: string;
@@ -52,11 +50,6 @@ const userSchema = new Schema<IUser>(
     },
     passwordHash: {
       type: String,
-      required: true,
-    },
-    teamId: {
-      type: Schema.Types.ObjectId,
-      ref: "Team",
       required: true,
     },
     roles: [
@@ -113,7 +106,6 @@ const userSchema = new Schema<IUser>(
 );
 
 userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ teamId: 1, username: 1 }, { unique: true });
-userSchema.index({ teamId: 1 });
+userSchema.index({ username: 1 }, { unique: true });
 
 export const User = mongoose.model<IUser>("User", userSchema);
